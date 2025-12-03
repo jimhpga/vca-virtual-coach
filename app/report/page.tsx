@@ -1,255 +1,134 @@
-"use client";
-
-import { FormEvent, useEffect, useState } from "react";
 import { SwingReport, SwingReportData } from "../../components/SwingReport";
 
-const fallbackReport: SwingReportData = {
-  playerName: "Player",
-  hand: "Right",
-  eye: "Right",
-  handicap: 1,
-  summary: [
-    "Solid fundamentally sound mid-iron swing with slight room for refinement in transition and low point control.",
-    "Strong and stable setup supporting a powerful coil.",
-    "Good wrist hinge creating width and leverage through the backswing.",
-    "Consistent clubface control leading to accurate start direction.",
-    "Minor weight shift timing issues affecting low point consistency.",
-    "Swing path generally on plane but can improve shallow entry angle.",
-  ],
+const demoReport: SwingReportData = {
+  player: {
+    name: "Player",
+    hand: "Right",
+    eye: "Unknown",
+    handicap: "N/A",
+  },
+  swingSummary:
+    "This swing has a smooth tempo and a solid, athletic setup. The ball flight suggests the club is generally on plane, but you’re leaving a bit of speed and compression on the table. The biggest opportunities are syncing the lower body a touch earlier in transition, sharpening hip rotation through the strike, and letting the club exit a little more left so the face doesn’t hang open. Overall, this is a very playable motion that’s one focused 14-day block away from feeling like a weapon off the tee.",
+  swingRatings: {
+    swing: "A-",
+    power: "B+",
+    consistency: "A-",
+    readiness: "Ready",
+  },
+  swingPreview: {
+    videoUrl: "", // if you ever have a hosted clip, drop the URL here
+    checkpoints: [
+      {
+        label: "P1",
+        phase: "Address",
+        status: "GREEN",
+        short: "Posture is athletic and stable.",
+        long: "Neutral spine, slight knee flex, and good balance over the arches of the feet. Hands hang naturally with no tension.",
+        youtubeQuery: "golf swing setup posture P1",
+      },
+      {
+        label: "P3",
+        phase: "Top of backswing",
+        status: "YELLOW",
+        short: "Slightly under-rotated chest.",
+        long: "Shoulders turn most of the way, but ribcage could finish a touch more behind the ball to load fully without swaying.",
+        youtubeQuery: "golf swing full shoulder turn top of backswing",
+      },
+      {
+        label: "P5",
+        phase: "Downswing",
+        status: "YELLOW",
+        short: "Lower body could lead a bit sooner.",
+        long: "Hips start to unwind, but arms and hands chase too quickly. This can rob you of ground-up power and shallow delivery.",
+        youtubeQuery: "golf downswing sequence lower body leads",
+      },
+      {
+        label: "P7",
+        phase: "Impact",
+        status: "GREEN",
+        short: "Face control is solid.",
+        long: "Handle is slightly ahead with reasonable shaft lean. Contact is generally centered with a predictable start line.",
+        youtubeQuery: "golf impact position slow motion iron",
+      },
+    ],
+  },
   strengths: [
-    "Athletic and balanced setup promoting an efficient coil.",
-    "Strong connection to the lower body during backswing.",
-    "Effective use of wrist hinge for width and power.",
-    "Good control of clubface orientation through impact.",
-    "Consistent takeaway path aligned with target line.",
+    "Good rhythm and balance throughout the swing.",
+    "Solid posture and setup position.",
+    "Maintains connection between arms and body during takeaway.",
   ],
   priorityFixes: [
-    "Improve weight shift timing — work on syncing lower body transition slightly earlier to promote better low-point control and more consistent ball-first contact.",
-    "Shorten and smooth the top of backswing — focus on slightly reducing arm travel at the top to keep the club in front of you.",
-    "Refine exit path — feel the handle working more left through impact to prevent blocks and high right shots.",
+    "Increase hip rotation speed during the downswing to generate more power.",
+    "Improve weight transfer from back foot to front foot for greater momentum.",
+    "Sharpen exit path and wrist hinge release to maximize clubhead speed at impact.",
   ],
   powerLeaks: [
-    "Low launch angle due to deceleration through impact.",
-    "Slight casting of the hands on transition reducing stored leverage.",
-    "Early extension causing some loss of speed and power.",
-    "Minor steepness on downswing limiting compression.",
+    "Limited lower body drive reducing kinetic chain efficiency.",
+    "Early casting of the club reduces stored energy for release.",
+    "Insufficient follow-through speed indicating constrained acceleration.",
   ],
   checkpoints: [
     {
       label: "P1",
-      phase: "Setup",
+      phase: "Setup Position",
       status: "GREEN",
-      note: "Balanced athletic posture with proper spine and ball position.",
+      short: "Posture and alignment are solid.",
+      long: "Balanced posture with neutral spine and stable stance. Ball position and alignment give you a strong starting platform.",
+      youtubeQuery: "golf setup position neutral posture",
     },
     {
       label: "P2",
-      phase: "Takeaway",
-      status: "GREEN",
-      note: "Smooth one-piece takeaway keeping clubhead low and on target line.",
+      phase: "Backswing Rotation",
+      status: "YELLOW",
+      short: "Rotation is adequate but could store more power.",
+      long: "Shoulders turn, but trail hip doesn’t fully load, which caps how much energy you can send back down into the ball.",
+      youtubeQuery: "golf backswing rotation trail hip load",
     },
     {
       label: "P3",
-      phase: "Top of backswing",
-      status: "GREEN",
-      note: "Full rotation with strong body coil and wide arc.",
+      phase: "Weight Transfer",
+      status: "YELLOW",
+      short: "Weight shift is present but not aggressive enough to build speed.",
+      long: "Pressure does move forward, but it’s gradual. A crisper shift into lead side before impact would boost ball speed.",
+      youtubeQuery: "golf weight transfer drill pressure shift",
     },
     {
       label: "P4",
-      phase: "Transition",
-      status: "YELLOW",
-      note: "Slight delay in lower body initiation affecting rhythm and low point.",
+      phase: "Downswing Sequencing",
+      status: "RED",
+      short: "Lower body rotation and wrist release could be faster and better timed.",
+      long: "Arms and club sometimes outrace the hips, causing a slight stall. Getting the hips turning earlier keeps the club in the slot.",
+      youtubeQuery: "golf downswing sequence hips lead arms",
     },
     {
       label: "P5",
-      phase: "Downswing",
+      phase: "Follow Through",
       status: "YELLOW",
-      note: "Good leg drive but sometimes steep club path reducing strike quality.",
-    },
-    {
-      label: "P6",
-      phase: "Impact",
-      status: "GREEN",
-      note: "Consistent square clubface with solid compression and divot control.",
-    },
-    {
-      label: "P7",
-      phase: "Release",
-      status: "GREEN",
-      note: "Smooth release with hands ahead of the clubhead at impact.",
-    },
-    {
-      label: "P8",
-      phase: "Finish",
-      status: "GREEN",
-      note: "Balanced full finish facing the target with good rotation.",
-    },
-    {
-      label: "P9",
-      phase: "Setup to start line",
-      status: "GREEN",
-      note: "Excellent alignment and path control leading to consistent ball flight.",
+      short: "Follow-through appears restricted, limiting power output.",
+      long: "Finish doesn’t always get fully around onto the lead side. Freeing up the finish will help speed continue through the ball.",
+      youtubeQuery: "golf full finish around body",
     },
   ],
   planBlocks: [
     {
-      title: "Days 1–2: Transition Timing",
-      text: "Shorten transition and sync lower body earlier. Use slow-motion reps focusing on lead hip starting down first. Blend into 9-to-3 swings before going full speed.",
+      title: "Days 1–2: Setup & Rhythm",
+      text: "Lock in a repeatable setup and smooth tempo. Use mirror work or phone video to check posture, ball position, and first move away.",
     },
     {
-      title: "Days 3–5: Downswing Plane",
-      text: "Rehearse shallower downswing with trail elbow staying more in front. Use alignment sticks to guide path and rehearse hitting from the inside without getting stuck.",
+      title: "Days 3–5: Load & Turn",
+      text: "Focus on full shoulder and ribcage rotation while keeping lower body stable. Add slow 9-to-3 swings to blend feel into motion.",
     },
     {
-      title: "Days 6–7: Weight Shift & Low Point",
-      text: "Low-point ladder drill with mid-iron. Progressively move divot a ball ahead of the previous mark while keeping chest over the ball and not hanging back.",
+      title: "Days 6–9: Downswing & Speed",
+      text: "Drill lower-body-first downswing and snap the club through impact. Use step-through swings and tee-height ladder drills to build speed.",
     },
     {
-      title: "Days 8–14: Integrate & Transfer",
-      text: "Blend new feels into full routine: pre-shot, start line, and finish. Alternate block practice (same target) with random practice (different targets) to lock in changes.",
+      title: "Days 10–14: On-Course Transfer",
+      text: "Take the new patterns to the course with 50/50 practice: half block practice to confirm feels, half random targets to test under pressure.",
     },
   ],
 };
 
 export default function SwingReportPage() {
-  const [report, setReport] = useState<SwingReportData | null>(null);
-
-  const [question, setQuestion] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [isAsking, setIsAsking] = useState(false);
-
-  useEffect(() => {
-    try {
-      const stored = window.sessionStorage.getItem("vca-latest-report");
-      if (stored) {
-        setReport(JSON.parse(stored));
-      } else {
-        setReport(fallbackReport);
-      }
-    } catch (e) {
-      console.error("Error loading report from sessionStorage:", e);
-      setReport(fallbackReport);
-    }
-  }, []);
-
-  async function handleAsk(e: FormEvent) {
-    e.preventDefault();
-    if (!question.trim() || !report) return;
-
-    setIsAsking(true);
-    setAnswer("");
-
-    try {
-      const res = await fetch("/api/report-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          report,
-          question: question.trim(),
-        }),
-      });
-
-      if (!res.ok) {
-        console.error("report-chat error:", await res.text());
-        setAnswer("Sorry, something went wrong answering that question.");
-        return;
-      }
-
-      const data = await res.json();
-      setAnswer(data.answer ?? "No answer returned.");
-    } catch (err) {
-      console.error(err);
-      setAnswer("Error talking to the coach. Try again in a moment.");
-    } finally {
-      setIsAsking(false);
-    }
-  }
-
-  if (!report) {
-    return (
-      <main className="min-h-screen bg-slate-950 text-slate-50 flex items-center justify-center">
-        <p className="text-sm text-slate-300">Loading swing report…</p>
-      </main>
-    );
-  }
-
-  return (
-    <main className="min-h-screen bg-gradient-to-b from-emerald-900 via-slate-950 to-slate-950 text-slate-50 px-4 py-8 flex justify-center">
-      <div className="w-full max-w-6xl">
-        {/* Header */}
-        <header className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              Virtual Coach AI — Swing Report
-            </h1>
-            <p className="text-sm text-emerald-200">
-              Player: {report.playerName} · Hand: {report.hand} · Eye:{" "}
-              {report.eye} · Handicap: {report.handicap}
-            </p>
-          </div>
-          <a
-            href="/upload"
-            className="text-xs px-3 py-1 rounded-full border border-emerald-300/60 bg-emerald-900/40 hover:bg-emerald-800 transition"
-          >
-            Analyze another swing
-          </a>
-        </header>
-
-        {/* Main swing report card */}
-        <SwingReport report={report} />
-
-        {/* Q&A panel */}
-        <section className="mt-6 rounded-3xl bg-slate-900/90 border border-slate-700/70 shadow-xl p-4 flex flex-col gap-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xs font-semibold text-emerald-300">
-              Questions about this report?
-            </h2>
-            <p className="text-[11px] text-slate-400">
-              Ask follow-ups like:{" "}
-              <span className="italic">
-                &quot;What does P5 yellow actually mean for my ball flight?&quot;
-              </span>
-            </p>
-          </div>
-
-          <form onSubmit={handleAsk} className="flex flex-col gap-2 text-xs">
-            <textarea
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              rows={3}
-              placeholder="Ask about any part of this report — checkpoints, drills, or what to expect on the course..."
-              className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-            <div className="flex items-center justify-between">
-              <button
-                type="submit"
-                disabled={isAsking || !question.trim()}
-                className="px-4 py-2 rounded-xl bg-emerald-500 text-slate-950 text-xs font-semibold shadow-md disabled:opacity-60"
-              >
-                {isAsking ? "Coach is thinking..." : "Ask Coach About This Report"}
-              </button>
-              {answer && (
-                <span className="text-[11px] text-slate-400">
-                  Answer appears below.
-                </span>
-              )}
-            </div>
-          </form>
-
-          {answer && (
-            <div className="mt-2 rounded-2xl border border-slate-700 bg-slate-950/80 p-3 text-xs text-slate-100">
-              <p className="text-[11px] font-semibold text-emerald-300 mb-1">
-                Coach’s answer
-              </p>
-              <p className="whitespace-pre-wrap leading-relaxed">{answer}</p>
-            </div>
-          )}
-        </section>
-
-        <footer className="mt-4 text-[10px] text-slate-500 text-center">
-          Latest report is stored in this browser. For a new swing, upload again
-          from the VCA AI coach.
-        </footer>
-      </div>
-    </main>
-  );
+  return <SwingReport report={demoReport} />;
 }
